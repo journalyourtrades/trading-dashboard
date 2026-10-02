@@ -884,7 +884,15 @@ Live from your Notion database
             <div id="kpiRR" class="kpi-value">
                 0.66
             </div>
-   
+        </div>
+
+        <div class="kpi">
+            <div class="kpi-label">Trades</div>
+            <div id="kpiTrades" class="kpi-value">
+                24
+            </div>
+        </div>
+
     </div>
     
 
@@ -1916,8 +1924,7 @@ function updateMainKpis(){
     if(tradesEl)
         tradesEl.textContent =
             filtered.length;
-
-   }
+}
 
 function updateSummaryPnl(){
 
@@ -2693,8 +2700,6 @@ function renderYear() {
         "Year " + year
     );
 }
-
-
 
 
 function updatePeriod(
