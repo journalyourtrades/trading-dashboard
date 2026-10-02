@@ -846,49 +846,49 @@ Live from your Notion database
 
         <div class="kpi">
             <div class="kpi-label">Total P&amp;L</div>
-            <div class="kpi-value positive">
+            <div id="kpiTotal" class="kpi-value positive">
                 $258.00
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">Win Rate</div>
-            <div class="kpi-value">
+            <div id="kpiWinRate" class="kpi-value">
                 77.3%
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">Profit Factor</div>
-            <div class="kpi-value">
+            <div id="kpiProfitFactor" class="kpi-value">
                 2.37
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">Avg Win</div>
-            <div class="kpi-value positive">
+            <div id="kpiAvgWin" class="kpi-value positive">
                 $26.29
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">Avg Loss</div>
-            <div class="kpi-value negative">
+            <div id="kpiAvgLoss" class="kpi-value negative">
                 -$37.80
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">R:R (Avg)</div>
-            <div class="kpi-value">
+            <div id="kpiRR" class="kpi-value">
                 0.70
             </div>
         </div>
 
         <div class="kpi">
             <div class="kpi-label">Trades</div>
-            <div class="kpi-value">
+            <div id="kpiTrades" class="kpi-value">
                 25
             </div>
         </div>
@@ -945,6 +945,11 @@ Live from your Notion database
 
 
 <div class="view-buttons">
+
+<button id="allTimeBtn"
+        onclick="setAllTime()">
+All Time
+</button>
 
 <button id="monthBtn"
         onclick="setView('month')">
@@ -1668,6 +1673,7 @@ let currentView = "month";
 let currentDate = new Date();
 let selectedWeekStart = null;
 let selectedDate = null;
+let kpiMode = "all";
 
 
 function dateKey(date) {
@@ -1729,6 +1735,195 @@ function resultClass(value, hasTrades = true){
         return "negative";
 
     return "break-even";
+}
+
+function updateMainKpis(){
+    let filtered = [...TRADES];
+
+    if(kpiMode === "year"){
+        const start = new Date(
+            currentDate.getFullYear(),
+            0,
+            1
+        );
+
+        const end = new Date(
+            currentDate.getFullYear() + 1,
+            0,
+            1
+        );
+
+        filtered = TRADES.filter(t => {
+            const d = parseDate(t.date);
+            return d >= start && d < end;
+        });
+    }
+
+    if(kpiMode === "month"){
+        const start = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            1
+        );
+
+        const end = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth() + 1,
+            1
+        );
+
+        filtered = TRADES.filter(t => {
+            const d = parseDate(t.date);
+            return d >= start && d < end;
+        });
+    }
+
+    if(kpiMode === "week"){
+        const start =
+            selectedWeekStart ||
+            getMonday(currentDate);
+
+        const end = new Date(start);
+        end.setDate(end.getDate() + 7);
+
+        filtered = TRADES.filter(t => {
+            const d = parseDate(t.date);
+            return d >= start && d < end;
+        });
+    }
+
+    if(kpiMode === "day"){
+        const day =
+            selectedDate ||
+            currentDate;
+
+        const start = new Date(
+            day.getFullYear(),
+            day.getMonth(),
+            day.getDate()
+        );
+
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        filtered = TRADES.filter(t => {
+            const d = parseDate(t.date);
+            return d >= start && d < end;
+        });
+    }
+
+    const wins = filtered.filter(
+        t => String(t.result).toLowerCase().trim() === "win"
+    );
+
+    const losses = filtered.filter(
+        t => String(t.result).toLowerCase().trim() === "loss"
+    );
+
+    const total = filtered.reduce(
+        (sum, t) => sum + Number(t.pnl || 0),
+        0
+    );
+
+    const grossWin = wins.reduce(
+        (sum, t) => sum + Number(t.pnl || 0),
+        0
+    );
+
+    const grossLoss = Math.abs(
+        losses.reduce(
+            (sum, t) => sum + Number(t.pnl || 0),
+            0
+        )
+    );
+
+    const avgWin =
+        wins.length
+            ? grossWin / wins.length
+            : 0;
+
+    const avgLoss =
+        losses.length
+            ? grossLoss / losses.length
+            : 0;
+
+    const profitFactor =
+        grossLoss
+            ? grossWin / grossLoss
+            : null;
+
+    const rr =
+        avgLoss
+            ? avgWin / avgLoss
+            : null;
+
+    const winRate =
+        (wins.length + losses.length)
+            ? wins.length /
+              (wins.length + losses.length) *
+              100
+            : 0;
+
+    const totalEl =
+        document.getElementById("kpiTotal");
+
+    const winRateEl =
+        document.getElementById("kpiWinRate");
+
+    const pfEl =
+        document.getElementById("kpiProfitFactor");
+
+    const avgWinEl =
+        document.getElementById("kpiAvgWin");
+
+    const avgLossEl =
+        document.getElementById("kpiAvgLoss");
+
+    const rrEl =
+        document.getElementById("kpiRR");
+
+    const tradesEl =
+        document.getElementById("kpiTrades");
+
+    if(totalEl){
+        totalEl.textContent =
+            money(total);
+
+        totalEl.className =
+            "kpi-value " +
+            resultClass(
+                total,
+                filtered.length > 0
+            );
+    }
+
+    if(winRateEl)
+        winRateEl.textContent =
+            winRate.toFixed(1) + "%";
+
+    if(pfEl)
+        pfEl.textContent =
+            profitFactor === null
+                ? "∞"
+                : profitFactor.toFixed(2);
+
+    if(avgWinEl)
+        avgWinEl.textContent =
+            money(avgWin);
+
+    if(avgLossEl)
+        avgLossEl.textContent =
+            money(-avgLoss);
+
+    if(rrEl)
+        rrEl.textContent =
+            rr === null
+                ? "—"
+                : rr.toFixed(2);
+
+    if(tradesEl)
+        tradesEl.textContent =
+            filtered.length;
 }
 
 function updateSummaryPnl(){
@@ -2516,9 +2711,39 @@ function updatePeriod(
 }
 
 
+function setAllTime() {
+
+    kpiMode = "all";
+
+    document.querySelectorAll(
+        ".view-buttons button"
+    ).forEach(button => {
+        button.classList.remove("active");
+    });
+
+    document.getElementById(
+        "allTimeBtn"
+    ).classList.add("active");
+
+    updateMainKpis();
+}
+
+
 function setView(view) {
 
     currentView = view;
+
+   if(view === "week"){
+        kpiMode = "week";
+   }
+
+   if(view === "month"){
+       kpiMode = "month";
+   }
+
+   if(view === "year"){
+       kpiMode = "year";
+   }
 
 
     document.querySelectorAll(
@@ -2553,6 +2778,7 @@ function render() {
         renderYear();
     
     updateSummaryPnl();
+    updateMainKpis();
 }
 
 
@@ -2629,7 +2855,13 @@ function openMonth(month) {
             1
         );
 
-    setView("month");
+    kpiMode = "month";
+
+    render();
+
+    document.getElementById(
+        "monthBtn"
+).classList.add("active");
 }
 
 
@@ -2720,6 +2952,7 @@ function notionBadge(value) {
 function openDay(key) {
    
     selectedDate = parseDate(key);
+    kpiMode = "day";
 
     const clickedDate =
         parseDate(key);
@@ -2739,6 +2972,7 @@ function openDay(key) {
     );
 
     updateSummaryPnl();
+    updateMainKpis();
 
     if(!trades.length)
         return;
@@ -3014,7 +3248,11 @@ function closeModalOutside(event) {
 }
 
 
-setView("month");
+render();
+
+document.getElementById(
+    "monthBtn"
+).classList.add("active");
 
 </script>
 
