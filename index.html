@@ -1667,6 +1667,7 @@ const TRADES = [{"id": "3ed01c6a-9c9d-80c7-91c6-ef99bab9613b", "url": "https://a
 let currentView = "month";
 let currentDate = new Date();
 let selectedWeekStart = null;
+let selectedDate = null;
 
 
 function dateKey(date) {
@@ -1771,11 +1772,17 @@ function updateSummaryPnl(){
     );
 
     const dayStart =
-        new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate()
-        );
+        selectedDate
+            ? new Date(
+                selectedDate.getFullYear(),
+                selectedDate.getMonth(),
+                selectedDate.getDate()
+            )
+            : new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                currentDate.getDate()
+            );
 
     const dayEnd =
         new Date(dayStart);
@@ -2711,6 +2718,8 @@ function notionBadge(value) {
 
 
 function openDay(key) {
+   
+    selectedDate = parseDate(key);
 
     const clickedDate =
         parseDate(key);
