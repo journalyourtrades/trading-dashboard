@@ -2859,9 +2859,15 @@ function openMonth(month) {
 
     render();
 
+    document.querySelectorAll(
+        ".view-buttons button"
+    ).forEach(button => {
+        button.classList.remove("active");
+    });
+
     document.getElementById(
         "monthBtn"
-).classList.add("active");
+    ).classList.add("active");
 }
 
 
